@@ -4,7 +4,8 @@ from contextlib import contextmanager
 from six.moves import urllib
 
 from mlflow.entities.lifecycle_stage import LifecycleStage
-from mlflow.store.dbmodels.db_types import MYSQL
+
+from mlflow.store.dbmodels.db_types import MYSQL, MSSQL
 from mlflow.store.dbmodels.models import Base, SqlExperiment, SqlRun, SqlMetric, SqlParam, SqlTag
 from mlflow.entities import RunStatus, SourceType, Experiment
 from mlflow.store.abstract_store import AbstractStore
@@ -98,11 +99,15 @@ class SqlAlchemyStore(AbstractStore):
     def _set_no_auto_for_zero_values(self, session):
         if self.db_type == MYSQL:
             session.execute("SET @@SESSION.sql_mode='NO_AUTO_VALUE_ON_ZERO';")
+        if self.db_type == MSSQL:
+            session.execute("SET IDENTITY_INSERT experiments ON;")
 
     # DB helper methods to allow zero values for columns with auto increments
     def _unset_no_auto_for_zero_values(self, session):
         if self.db_type == MYSQL:
             session.execute("SET @@SESSION.sql_mode='';")
+        if self.db_type == MSSQL:
+            session.execute("SET IDENTITY_INSERT experiments OFF;")
 
     def _create_default_experiment(self, session):
         """
